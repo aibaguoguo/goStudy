@@ -49,14 +49,14 @@ func (tm *TopicManager) getOrCreateTopicChan(topic string, msg string) chan Mess
 	if !exists {
 		ch = make(chan Message, tm.bufferSize)
 		tm.topicChans[topic] = ch
-		fmt.Printf("【Topic管理器】%s创建新Topic：%s，通道缓冲区大小：%d\n", msg, topic, tm.bufferSize)
+		fmt.Printf("【Topic管理器】[%s]创建新Topic：%s，通道缓冲区大小：%d\n", msg, topic, tm.bufferSize)
 	}
 	return ch
 }
 
 // 发送消息到指定Topic（生产者调用）
 func (tm *TopicManager) SendMessage(topic string, data interface{}) error {
-	// 检查管理器是否已关闭
+	// 检查管理器是否已关闭  会导致并发死锁问题
 	//tm.mu.RLock()
 	//defer tm.mu.RUnlock()
 	//if tm.isClosed {
@@ -96,9 +96,18 @@ func (tm *TopicManager) SendMessage(topic string, data interface{}) error {
 // 订阅指定Topic（消费者调用），返回只读通道和取消订阅函数
 func (tm *TopicManager) Subscribe(topic string) (<-chan Message, error) {
 	// 检查管理器是否已关闭
+	//tm.mu.RLock()
+	//defer tm.mu.RUnlock()
+	//if tm.isClosed {
+	//	return nil, fmt.Errorf("Topic管理器已关闭，无法订阅Topic：%s", topic)
+	//}
+
 	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-	if tm.isClosed {
+	isClosed := tm.isClosed // 拷贝到局部变量，避免后续再次加锁
+	tm.mu.RUnlock()         // 立即释放读锁，不持有到后续操作
+
+	//检查是否关闭
+	if isClosed {
 		return nil, fmt.Errorf("Topic管理器已关闭，无法订阅Topic：%s", topic)
 	}
 
