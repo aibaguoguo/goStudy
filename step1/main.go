@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	v3 "step1/mq/v3"
+	"reflect"
+	"step1/safeCounter"
 	"sync"
 	"time"
 )
@@ -12,7 +13,13 @@ func main() {
 	//testChan()
 	//v1.Test()
 	//v2.Test()
-	v3.Test()
+	//v3.Test()
+	person := safeCounter.Person{Name: "peter", Sex: "男"}
+	t := reflect.TypeOf(person)
+	v := reflect.ValueOf(person)
+	for i := 0; i < t.NumField(); i++ {
+		fmt.Println(t.Field(i).Type, t.Field(i).Name, v.FieldByName(t.Field(i).Name), t.Field(i).Anonymous)
+	}
 }
 
 func testChan() {

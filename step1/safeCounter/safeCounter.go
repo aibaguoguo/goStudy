@@ -5,6 +5,12 @@ import (
 	"sync"
 )
 
+type Person struct {
+	Name string
+	age  int
+	Sex  string
+}
+
 type SafeCounter struct {
 	Count int
 	lock  sync.Mutex
